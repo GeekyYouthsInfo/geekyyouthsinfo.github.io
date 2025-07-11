@@ -165,9 +165,15 @@ p {
     font-weight: 700;
 }
 
-.nav-logo i {
-    color: var(--primary-color);
-    font-size: 1.8rem;
+.nav-logo .logo-image {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    transition: var(--transition);
+}
+
+.nav-logo a:hover .logo-image {
+    transform: scale(1.1);
 }
 
 .nav-menu {
@@ -782,9 +788,16 @@ section {
     margin-bottom: 1rem;
 }
 
-.footer-logo i {
-    color: var(--primary-color);
-    font-size: 1.8rem;
+.footer-logo .logo-image {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+    transition: var(--transition);
+}
+
+.footer-logo:hover .logo-image {
+    transform: scale(1.1);
 }
 
 .footer-section h4 {
