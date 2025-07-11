@@ -9,6 +9,9 @@ TheGeeksInfo is more than just a software development company. We're educators, 
 ### What We Do
 
 - **Custom Software Development**: Building tailored solutions using modern technologies
+- **AI & Machine Learning**: Custom AI models, NLP, computer vision, and predictive analytics
+- **Data Labeling & Annotation**: High-quality data preparation for ML training
+- **AI Agents & Automation**: Intelligent agents, chatbots, and process automation
 - **Cloud Solutions**: Scalable infrastructure and DevOps services
 - **Technical Training**: Industry-focused bootcamps and certification programs
 - **Consulting Services**: Strategic technology guidance for businesses
