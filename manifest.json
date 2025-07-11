@@ -1,0 +1,121 @@
+{
+    "name": "TheGeeksInfo - Bridging Classroom & Industry",
+    "short_name": "TheGeeksInfo",
+    "description": "Innovative software engineering services and education that bridges the gap between classroom and industry",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#2563eb",
+    "orientation": "portrait-primary",
+    "scope": "/",
+    "lang": "en-US",
+    "categories": ["education", "technology", "business"],
+    "screenshots": [
+        {
+            "src": "assets/images/screenshot-desktop.png",
+            "sizes": "1920x1080",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "Desktop view of TheGeeksInfo homepage"
+        },
+        {
+            "src": "assets/images/screenshot-mobile.png",
+            "sizes": "390x844",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "Mobile view of TheGeeksInfo homepage"
+        }
+    ],
+    "icons": [
+        {
+            "src": "assets/images/icon-72x72.png",
+            "sizes": "72x72",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "assets/images/icon-96x96.png",
+            "sizes": "96x96",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "assets/images/icon-128x128.png",
+            "sizes": "128x128",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "assets/images/icon-144x144.png",
+            "sizes": "144x144",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "assets/images/icon-152x152.png",
+            "sizes": "152x152",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "assets/images/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "assets/images/icon-384x384.png",
+            "sizes": "384x384",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "assets/images/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Services",
+            "short_name": "Services",
+            "description": "View our software engineering services",
+            "url": "/#services",
+            "icons": [
+                {
+                    "src": "assets/images/shortcut-services.png",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "Training Programs",
+            "short_name": "Programs",
+            "description": "Explore our training programs and bootcamps",
+            "url": "/#programs",
+            "icons": [
+                {
+                    "src": "assets/images/shortcut-programs.png",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "Contact Us",
+            "short_name": "Contact",
+            "description": "Get in touch with our team",
+            "url": "/#contact",
+            "icons": [
+                {
+                    "src": "assets/images/shortcut-contact.png",
+                    "sizes": "96x96"
+                }
+            ]
+        }
+    ],
+    "prefer_related_applications": false,
+    "edge_side_panel": {
+        "preferred_width": 400
+    }
+}

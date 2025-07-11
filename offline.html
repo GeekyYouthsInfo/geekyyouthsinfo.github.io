@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - TheGeeksInfo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .offline-container {
+            max-width: 500px;
+        }
+        
+        .offline-icon {
+            font-size: 4rem;
+            margin-bottom: 2rem;
+            opacity: 0.8;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+        
+        p {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        .retry-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .retry-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        .features {
+            margin-top: 3rem;
+            text-align: left;
+        }
+        
+        .features h3 {
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+        
+        .features ul {
+            list-style: none;
+        }
+        
+        .features li {
+            margin: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        
+        .features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .offline-icon {
+                font-size: 3rem;
+            }
+            
+            .features {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">📡</div>
+        <h1>You're Offline</h1>
+        <p>It looks like you're not connected to the internet. Don't worry, you can still explore some cached content!</p>
+        
+        <button class="retry-btn" onclick="window.location.reload()">Try Again</button>
+        
+        <div class="features">
+            <h3>What you can still do:</h3>
+            <ul>
+                <li>Browse previously visited pages</li>
+                <li>View cached content</li>
+                <li>Read about our services</li>
+                <li>Check out our training programs</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Check for connection periodically
+        function checkConnection() {
+            if (navigator.onLine) {
+                window.location.reload();
+            }
+        }
+
+        // Check every 5 seconds
+        setInterval(checkConnection, 5000);
+
+        // Listen for online event
+        window.addEventListener('online', function() {
+            window.location.reload();
+        });
+    </script>
+</body>
+</html>
