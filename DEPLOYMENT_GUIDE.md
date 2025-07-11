@@ -14,7 +14,7 @@ cd /home/thembo-jonathan/geekyyouthsinfo.github.io
 git add .
 
 # Commit with a descriptive message
-git commit -m "Initial website launch - Complete TheGeeksInfo site with modern design"
+git commit -m "Add AI services, data labeling, AI agents, and integrate company logo"
 
 # Push to GitHub
 git push origin main
