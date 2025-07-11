@@ -173,27 +173,49 @@ function initializeContactForm() {
 
         // Get form data
         const formData = new FormData(contactForm);
-        const data = {};
-        formData.forEach((value, key) => {
-            data[key] = value;
-        });
-
+        const name = formData.get('name');
+        const email = formData.get('email');
+        const service = formData.get('service');
+        const message = formData.get('message');
+        
         // Validate form
-        if (validateForm(data)) {
-            // Show loading state
-            const submitButton = contactForm.querySelector('button[type="submit"]');
-            const originalText = submitButton.textContent;
-            submitButton.textContent = 'Sending...';
-            submitButton.disabled = true;
-
-            // Simulate form submission (replace with actual API call)
-            setTimeout(() => {
-                showNotification('Message sent successfully! We\'ll get back to you soon.', 'success');
-                contactForm.reset();
-                submitButton.textContent = originalText;
-                submitButton.disabled = false;
-            }, 2000);
+        if (!name || !email || !service || !message) {
+            showNotification('Please fill in all required fields.', 'error');
+            return;
         }
+
+        // Create mailto link to send email to thegeeksinformation@gmail.com
+        const subject = encodeURIComponent(`New Contact Form Submission from ${name} - ${service}`);
+        const body = encodeURIComponent(`
+Hello TheGeeksInfo Team,
+
+You have received a new contact form submission from your website:
+
+Name: ${name}
+Email: ${email}
+Service Interested: ${service}
+
+Message:
+${message}
+
+---
+Please reply to this person at: ${email}
+
+This message was sent from the TheGeeksInfo contact form.
+        `);
+        
+        const mailtoLink = `mailto:thegeeksinformation@gmail.com?subject=${subject}&body=${body}`;
+        
+        // Show success message
+        showNotification('Opening your email client to send the message to thegeeksinformation@gmail.com...', 'success');
+        
+        // Open mailto link
+        window.location.href = mailtoLink;
+        
+        // Reset form after a short delay
+        setTimeout(() => {
+            contactForm.reset();
+        }, 1000);
     });
 }
 
