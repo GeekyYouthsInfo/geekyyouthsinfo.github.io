@@ -869,18 +869,28 @@ section {
     margin-bottom: 1rem;
 }
 
+.footer-logo-text {
+    display: flex;
+    align-items: center;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
 .footer-logo .logo-image {
     width: 40px;
     height: 40px;
     object-fit: contain;
-    filter: brightness(0) invert(1);
+    /* Remove problematic filter and use mix-blend-mode instead */
+    filter: none;
+    mix-blend-mode: screen;
     transition: var(--transition);
     /* Enhanced performance for footer logo */
     background-color: transparent;
     image-rendering: crisp-edges;
     image-rendering: -webkit-optimize-contrast;
     will-change: transform, opacity;
-    opacity: 1; /* Made visible by default */
+    opacity: 0.9; /* Slightly transparent for better blending */
     transform: translateZ(0);
     backface-visibility: hidden;
     min-width: 40px;
@@ -888,6 +898,10 @@ section {
     /* Additional fallback styles */
     display: block;
     visibility: visible;
+    /* Alternative approach for white logo on dark background */
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 4px;
 }
 
 .footer-logo:hover .logo-image {
