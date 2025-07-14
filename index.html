@@ -407,7 +407,7 @@
                         </div>
                     </div>
                     <div class="program-footer">
-                        <button class="btn-primary">Apply Now</button>
+                        <button class="btn-primary apply-now-btn" data-program="Software Engineering Internship">Apply Now</button>
                     </div>
                 </div>
                 
@@ -543,7 +543,7 @@
                         </div>
                     </div>
                     <div class="program-footer">
-                        <button class="btn-primary">Apply Now</button>
+                        <button class="btn-primary apply-now-btn" data-program="Tech Product Development & Manufacturing">Apply Now</button>
                     </div>
                 </div>
             </div>
@@ -946,6 +946,27 @@
             </div>
         </div>
     </footer>
+
+    <!-- Application Modal -->
+    <div id="applicationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Apply for Program</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <iframe id="applicationForm" 
+                        src="https://docs.google.com/forms/d/e/1T7bWtCCtISizNi-lyKihouHgIbTaSfZRX2ah1Vn3dT4/viewform?embedded=true" 
+                        width="100%" 
+                        height="600" 
+                        frameborder="0" 
+                        marginheight="0" 
+                        marginwidth="0">
+                    Loading…
+                </iframe>
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script src="assets/js/main.js"></script>

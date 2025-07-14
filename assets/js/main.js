@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeContactForm();
     initializeCounters();
     initializeTypingEffect();
+    initializeApplicationModal();
 });
 
 // Preload critical images for better performance
@@ -473,6 +474,58 @@ function ensureLogoLoading() {
     document.addEventListener('logoLoaded', function() {
         console.log('Logo loaded, starting secondary asset preload');
     });
+}
+
+// Application Modal functionality
+function initializeApplicationModal() {
+    const modal = document.getElementById('applicationModal');
+    const applyButtons = document.querySelectorAll('.apply-now-btn');
+    const closeBtn = document.querySelector('.close-modal');
+    const modalTitle = document.querySelector('.modal-header h2');
+    
+    // Open modal when Apply Now buttons are clicked
+    applyButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const programName = this.getAttribute('data-program');
+            modalTitle.textContent = `Apply for ${programName}`;
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            
+            // Analytics tracking
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'application_modal_opened', {
+                    program_name: programName
+                });
+            }
+        });
+    });
+    
+    // Close modal when X is clicked
+    closeBtn.addEventListener('click', closeModal);
+    
+    // Close modal when clicking outside of it
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.classList.contains('show')) {
+            closeModal();
+        }
+    });
+    
+    function closeModal() {
+        modal.classList.remove('show');
+        document.body.style.overflow = ''; // Restore scrolling
+        
+        // Analytics tracking
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'application_modal_closed');
+        }
+    }
 }
 
 // Utility functions
