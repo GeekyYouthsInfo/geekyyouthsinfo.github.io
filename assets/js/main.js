@@ -483,13 +483,30 @@ function initializeApplicationModal() {
     const closeBtn = document.querySelector('.close-modal');
     const modalTitle = document.querySelector('.modal-header h2');
     
+    // Track modal state to prevent multiple openings
+    let isModalOpen = false;
+    
     // Open modal when Apply Now buttons are clicked
     applyButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const programName = this.getAttribute('data-program');
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Prevent multiple modal openings
+            if (isModalOpen) return;
+            
+            const programName = this.getAttribute('data-program') || 'Our Program';
             modalTitle.textContent = `Apply for ${programName}`;
+            
+            isModalOpen = true;
             modal.classList.add('show');
             document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            
+            // Refresh iframe to prevent caching issues
+            const iframe = document.getElementById('applicationForm');
+            if (iframe) {
+                iframe.src = iframe.src;
+            }
             
             // Analytics tracking
             if (typeof gtag !== 'undefined') {
@@ -518,8 +535,11 @@ function initializeApplicationModal() {
     });
     
     function closeModal() {
+        if (!isModalOpen) return;
+        
         modal.classList.remove('show');
         document.body.style.overflow = ''; // Restore scrolling
+        isModalOpen = false;
         
         // Analytics tracking
         if (typeof gtag !== 'undefined') {
