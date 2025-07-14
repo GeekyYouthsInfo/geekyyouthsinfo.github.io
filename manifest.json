@@ -1,7 +1,7 @@
 {
     "name": "TheGeeksInfo - Bridging Business & Technology",
     "short_name": "TheGeeksInfo",
-    "description": "Innovative software engineering services and education that bridges the gap between classroom and industry",
+    "description": "Innovative software engineering services and education that bridges the gap between Business and Technology",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",

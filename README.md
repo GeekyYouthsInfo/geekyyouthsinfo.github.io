@@ -207,4 +207,4 @@ If you encounter any issues or have questions:
 
 **Made with ❤️ by TheGeeksInfo Team**
 
-*Bridging the gap between classroom and industry, one student at a time.*
+*Bridging the gap between business and technology, one student at a time.*
