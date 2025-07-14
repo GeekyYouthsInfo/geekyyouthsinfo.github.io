@@ -8,6 +8,8 @@ const contactForm = document.getElementById('contact-form');
 
 // Initialize the website
 document.addEventListener('DOMContentLoaded', function() {
+    preloadCriticalImages();
+    ensureLogoLoading();
     initializeNavigation();
     initializeScrollEffects();
     initializeAnimations();
@@ -16,6 +18,26 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeCounters();
     initializeTypingEffect();
 });
+
+// Preload critical images for better performance
+function preloadCriticalImages() {
+    const criticalImages = [
+        'assets/images/logo300x300.png'
+    ];
+    
+    criticalImages.forEach(imageSrc => {
+        const img = new Image();
+        img.onload = function() {
+            // Image loaded successfully
+            console.log('Preloaded:', imageSrc);
+        };
+        img.onerror = function() {
+            // Fallback if image fails to load
+            console.warn('Failed to preload:', imageSrc);
+        };
+        img.src = imageSrc;
+    });
+}
 
 // Navigation functionality
 function initializeNavigation() {
@@ -363,6 +385,39 @@ function initializeTypingEffect() {
         // Start typing effect after a delay
         setTimeout(typeWriter, 1000);
     }
+}
+
+// Ensure logo images load properly with fallbacks
+function ensureLogoLoading() {
+    const logoImages = document.querySelectorAll('.logo-image');
+    
+    logoImages.forEach(img => {
+        // Add error handling
+        img.addEventListener('error', function() {
+            console.warn('Logo failed to load, retrying...');
+            // Retry loading after a short delay
+            setTimeout(() => {
+                this.src = this.src + '?retry=' + Date.now();
+            }, 100);
+        });
+        
+        // Add load event for debugging
+        img.addEventListener('load', function() {
+            console.log('Logo loaded successfully');
+            this.style.opacity = '1';
+        });
+        
+        // Ensure the image is visible initially
+        img.style.opacity = '0';
+        img.style.transition = 'opacity 0.3s ease';
+        
+        // Force reload if src is already set but image might not be loaded
+        if (img.complete && img.naturalWidth === 0) {
+            img.src = img.src + '?force=' + Date.now();
+        } else if (img.complete) {
+            img.style.opacity = '1';
+        }
+    });
 }
 
 // Utility functions

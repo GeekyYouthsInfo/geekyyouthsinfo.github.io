@@ -27,6 +27,18 @@
     <link rel="icon" type="image/png" href="assets/images/logo300x300.png">
     <link rel="apple-touch-icon" href="assets/images/logo300x300.png">
     
+    <!-- Preload critical images -->
+    <link rel="preload" href="assets/images/logo300x300.png" as="image" type="image/png">
+    
+    <!-- Immediate logo preload script -->
+    <script>
+        // Preload logo immediately
+        (function() {
+            var img = new Image();
+            img.src = 'assets/images/logo300x300.png';
+        })();
+    </script>
+    
     <!-- Web App Manifest -->
     <link rel="manifest" href="manifest.json">
     
@@ -47,7 +59,13 @@
         <div class="nav-container">
             <div class="nav-logo">
                 <a href="#home">
-                    <img src="assets/images/logo300x300.png" alt="TheGeeksInfo Logo" class="logo-image">
+                    <img src="assets/images/logo300x300.png" 
+                         alt="TheGeeksInfo Logo" 
+                         class="logo-image"
+                         width="40" 
+                         height="40"
+                         loading="eager"
+                         decoding="sync">
                     <span>TheGeeksInfo</span>
                 </a>
             </div>
@@ -864,7 +882,13 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <div class="footer-logo">
-                        <img src="assets/images/logo300x300.png" alt="TheGeeksInfo Logo" class="logo-image">
+                        <img src="assets/images/logo300x300.png" 
+                             alt="TheGeeksInfo Logo" 
+                             class="logo-image"
+                             width="40" 
+                             height="40"
+                             loading="lazy"
+                             decoding="async">
                         <span>TheGeeksInfo</span>
                     </div>
                     <p>Bridging the gap between classroom and industry through innovative software engineering and education.</p>
