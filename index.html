@@ -27,15 +27,32 @@
     <link rel="icon" type="image/png" href="assets/images/logo300x300.png">
     <link rel="apple-touch-icon" href="assets/images/logo300x300.png">
     
-    <!-- Preload critical images -->
+    <!-- Preload critical images with multiple formats -->
     <link rel="preload" href="assets/images/logo300x300.png" as="image" type="image/png">
     
-    <!-- Immediate logo preload script -->
+    <!-- DNS prefetch for faster image loading -->
+    <link rel="dns-prefetch" href="//geekyyouthsinfo.github.io">
+    
+    <!-- Immediate logo preload script with optimization -->
     <script>
-        // Preload logo immediately
+        // Preload logo with multiple strategies
         (function() {
+            // Create image with cache busting only if needed
             var img = new Image();
+            img.onload = function() {
+                // Mark logo as successfully preloaded
+                document.documentElement.setAttribute('data-logo-loaded', 'true');
+            };
+            img.onerror = function() {
+                // Retry with cache busting if initial load fails
+                var retryImg = new Image();
+                retryImg.src = 'assets/images/logo300x300.png?retry=' + Date.now();
+            };
             img.src = 'assets/images/logo300x300.png';
+            
+            // Preload favicon as well
+            var favicon = new Image();
+            favicon.src = 'assets/images/logo300x300.png';
         })();
     </script>
     
@@ -65,7 +82,10 @@
                          width="40" 
                          height="40"
                          loading="eager"
-                         decoding="sync">
+                         decoding="sync"
+                         fetchpriority="high"
+                         onload="this.style.opacity='1'"
+                         onerror="this.style.opacity='0.5'; console.warn('Logo load failed')">
                     <span>TheGeeksInfo</span>
                 </a>
             </div>
@@ -888,7 +908,10 @@
                              width="40" 
                              height="40"
                              loading="lazy"
-                             decoding="async">
+                             decoding="async"
+                             fetchpriority="low"
+                             onload="this.style.opacity='1'"
+                             onerror="this.style.opacity='0.5'">
                         <span>TheGeeksInfo</span>
                     </div>
                     <p>Bridging the gap between classroom and industry through innovative software engineering and education.</p>

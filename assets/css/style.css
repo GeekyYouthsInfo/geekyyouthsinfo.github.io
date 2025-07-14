@@ -171,10 +171,18 @@ p {
     height: 40px;
     object-fit: contain;
     transition: var(--transition);
-    /* Ensure smooth loading */
+    /* Ensure smooth loading and performance */
     background-color: transparent;
     image-rendering: crisp-edges;
-    will-change: transform;
+    image-rendering: -webkit-optimize-contrast;
+    will-change: transform, opacity;
+    opacity: 0;
+    /* Force hardware acceleration */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    /* Prevent layout shifts */
+    min-width: 40px;
+    min-height: 40px;
 }
 
 .nav-logo a:hover .logo-image {
@@ -841,9 +849,16 @@ section {
     object-fit: contain;
     filter: brightness(0) invert(1);
     transition: var(--transition);
-    /* Ensure smooth loading */
+    /* Enhanced performance for footer logo */
     background-color: transparent;
     image-rendering: crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    will-change: transform, opacity;
+    opacity: 0;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    min-width: 40px;
+    min-height: 40px;
 }
 
 .footer-logo:hover .logo-image {
@@ -895,6 +910,42 @@ section {
 
 .footer-links a:hover {
     color: var(--primary-color);
+}
+
+/* Enhanced logo loading states and animations */
+.logo-image {
+    /* Base optimization for all logo images */
+    image-rendering: crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+}
+
+/* Loading state for logos */
+.logo-image:not([data-loaded="true"]) {
+    opacity: 0;
+    transform: translateZ(0) scale(0.95);
+}
+
+.logo-image[data-loaded="true"] {
+    opacity: 1;
+    transform: translateZ(0) scale(1);
+}
+
+/* Preload optimization */
+[data-logo-loaded="true"] .logo-image {
+    animation: logoFadeIn 0.3s ease-in-out;
+}
+
+@keyframes logoFadeIn {
+    from {
+        opacity: 0;
+        transform: translateZ(0) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateZ(0) scale(1);
+    }
 }
 
 /* Responsive Design */

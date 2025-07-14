@@ -387,36 +387,91 @@ function initializeTypingEffect() {
     }
 }
 
-// Ensure logo images load properly with fallbacks
+// Enhanced logo loading with performance optimization
 function ensureLogoLoading() {
     const logoImages = document.querySelectorAll('.logo-image');
+    let loadAttempts = 0;
+    const maxRetries = 3;
     
-    logoImages.forEach(img => {
-        // Add error handling
-        img.addEventListener('error', function() {
-            console.warn('Logo failed to load, retrying...');
-            // Retry loading after a short delay
-            setTimeout(() => {
-                this.src = this.src + '?retry=' + Date.now();
-            }, 100);
-        });
-        
-        // Add load event for debugging
-        img.addEventListener('load', function() {
-            console.log('Logo loaded successfully');
-            this.style.opacity = '1';
-        });
-        
-        // Ensure the image is visible initially
+    logoImages.forEach((img, index) => {
+        // Set initial state
         img.style.opacity = '0';
-        img.style.transition = 'opacity 0.3s ease';
+        img.style.transition = 'opacity 0.3s ease-in-out';
         
-        // Force reload if src is already set but image might not be loaded
-        if (img.complete && img.naturalWidth === 0) {
-            img.src = img.src + '?force=' + Date.now();
-        } else if (img.complete) {
-            img.style.opacity = '1';
+        // Performance optimization
+        img.style.willChange = 'opacity, transform';
+        
+        // Advanced error handling with exponential backoff
+        img.addEventListener('error', function() {
+            loadAttempts++;
+            console.warn(`Logo failed to load (attempt ${loadAttempts}/${maxRetries})`);
+            
+            if (loadAttempts <= maxRetries) {
+                const retryDelay = Math.pow(2, loadAttempts) * 100; // Exponential backoff
+                setTimeout(() => {
+                    this.src = this.src.split('?')[0] + '?retry=' + Date.now() + '_' + loadAttempts;
+                }, retryDelay);
+            } else {
+                // Final fallback - show placeholder or hide
+                this.style.opacity = '0.3';
+                this.style.filter = 'grayscale(100%)';
+                console.error('Logo failed to load after all retries');
+            }
+        });
+        
+        // Enhanced load event with performance monitoring
+        img.addEventListener('load', function() {
+            console.log(`Logo loaded successfully (index: ${index})`);
+            this.style.opacity = '1';
+            this.style.willChange = 'auto'; // Reset will-change for performance
+            
+            // Mark as loaded for other scripts
+            this.setAttribute('data-loaded', 'true');
+            
+            // Trigger custom event for other components
+            document.dispatchEvent(new CustomEvent('logoLoaded', { 
+                detail: { index: index, img: this } 
+            }));
+        });
+        
+        // Intersection Observer for lazy loading optimization (for footer logo)
+        if (index > 0) { // Apply only to non-critical logos
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+            
+            observer.observe(img);
         }
+        
+        // Force reload check with enhanced detection
+        if (img.complete) {
+            if (img.naturalWidth === 0 || img.naturalHeight === 0) {
+                // Image failed to load properly, force reload
+                img.src = img.src.split('?')[0] + '?force=' + Date.now();
+            } else {
+                // Image loaded successfully
+                img.style.opacity = '1';
+                img.setAttribute('data-loaded', 'true');
+            }
+        }
+        
+        // Timeout fallback
+        setTimeout(() => {
+            if (!img.getAttribute('data-loaded')) {
+                console.warn('Logo loading timeout, applying fallback');
+                img.style.opacity = '0.5';
+            }
+        }, 5000);
+    });
+    
+    // Preload next priority images after logo loads
+    document.addEventListener('logoLoaded', function() {
+        console.log('Logo loaded, starting secondary asset preload');
     });
 }
 
