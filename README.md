@@ -1,4 +1,4 @@
-# TheGeeksInfo - Bridging Classroom & Industry
+# TheGeeksInfo - Bridging Business & Technology
 
 Welcome to TheGeeksInfo's official website repository! We are an innovative IT company and startup dedicated to bridging the gap between classroom education and industry requirements through cutting-edge software engineering services and hands-on training programs.
 
