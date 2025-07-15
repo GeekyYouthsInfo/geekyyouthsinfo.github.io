@@ -1,87 +1,214 @@
-// Service Worker for TheGeeksInfo Website
-// Version 1.0.0
+// Service Worker for TheGeeksInfo Website - Full PWA Implementation
+// Version 1.2.0
 
-const CACHE_NAME = 'thegeeksinfo-v1.0.0';
-const urlsToCache = [
+const CACHE_NAME = 'thegeeksinfo-v1.2';
+const STATIC_CACHE_NAME = 'thegeeksinfo-static-v1.2';
+const DYNAMIC_CACHE_NAME = 'thegeeksinfo-dynamic-v1.2';
+
+// Define what to cache
+const STATIC_ASSETS = [
     '/',
     '/index.html',
     '/assets/css/style.css',
     '/assets/css/animations.css',
     '/assets/js/main.js',
+    '/assets/images/logo300x300.png',
+    '/manifest.json',
+    // Add offline fallback page
+    '/offline.html'
+];
+
+// External resources to cache
+const EXTERNAL_ASSETS = [
     'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
+    'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js'
 ];
 
 // Install event - cache resources
 self.addEventListener('install', function(event) {
     console.log('Service Worker installing...');
+    
     event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(function(cache) {
-                console.log('Cache opened');
-                return cache.addAll(urlsToCache);
-            })
-            .catch(function(error) {
-                console.log('Cache failed:', error);
-            })
+        Promise.all([
+            // Cache static assets
+            caches.open(STATIC_CACHE_NAME)
+                .then(function(cache) {
+                    console.log('Caching static assets...');
+                    return cache.addAll(STATIC_ASSETS);
+                }),
+            // Cache external assets
+            caches.open(DYNAMIC_CACHE_NAME)
+                .then(function(cache) {
+                    console.log('Caching external assets...');
+                    return cache.addAll(EXTERNAL_ASSETS);
+                })
+        ])
+        .then(() => {
+            console.log('Service Worker installation complete');
+            // Force activation
+            return self.skipWaiting();
+        })
+        .catch(function(error) {
+            console.log('Cache failed:', error);
+        })
     );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', function(event) {
     console.log('Service Worker activating...');
+    
+    const currentCaches = [CACHE_NAME, STATIC_CACHE_NAME, DYNAMIC_CACHE_NAME];
+    
     event.waitUntil(
-        caches.keys().then(function(cacheNames) {
-            return Promise.all(
-                cacheNames.map(function(cacheName) {
-                    if (cacheName !== CACHE_NAME) {
-                        console.log('Deleting old cache:', cacheName);
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
+        Promise.all([
+            // Clean up old caches
+            caches.keys().then(function(cacheNames) {
+                return Promise.all(
+                    cacheNames.map(function(cacheName) {
+                        if (!currentCaches.includes(cacheName)) {
+                            console.log('Deleting old cache:', cacheName);
+                            return caches.delete(cacheName);
+                        }
+                    })
+                );
+            }),
+            // Take control of all pages
+            self.clients.claim()
+        ])
+        .then(() => {
+            console.log('Service Worker activation complete');
         })
     );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - smart caching strategy
 self.addEventListener('fetch', function(event) {
-    event.respondWith(
-        caches.match(event.request)
-            .then(function(response) {
-                // Return cached version or fetch from network
-                if (response) {
-                    console.log('Serving from cache:', event.request.url);
-                    return response;
-                }
-                
-                console.log('Fetching from network:', event.request.url);
-                return fetch(event.request).then(function(response) {
-                    // Check if we received a valid response
-                    if (!response || response.status !== 200 || response.type !== 'basic') {
-                        return response;
-                    }
-
-                    // Clone the response as it can only be consumed once
-                    const responseToCache = response.clone();
-
-                    caches.open(CACHE_NAME)
-                        .then(function(cache) {
-                            cache.put(event.request, responseToCache);
-                        });
-
-                    return response;
-                }).catch(function(error) {
-                    console.log('Fetch failed:', error);
-                    
-                    // Return a custom offline page for navigation requests
-                    if (event.request.destination === 'document') {
-                        return caches.match('/offline.html');
-                    }
-                });
-            })
-    );
+    const url = new URL(event.request.url);
+    
+    // Handle different types of requests with appropriate caching strategies
+    if (event.request.destination === 'document') {
+        // Network-first for HTML documents
+        event.respondWith(handleDocumentRequest(event.request));
+    } else if (STATIC_ASSETS.some(asset => event.request.url.includes(asset))) {
+        // Cache-first for static assets
+        event.respondWith(handleStaticAssetRequest(event.request));
+    } else if (url.hostname !== location.hostname) {
+        // Stale-while-revalidate for external resources
+        event.respondWith(handleExternalRequest(event.request));
+    } else {
+        // Network-first with cache fallback for other requests
+        event.respondWith(handleNetworkFirstRequest(event.request));
+    }
 });
+
+// Network-first strategy for documents
+async function handleDocumentRequest(request) {
+    try {
+        const networkResponse = await fetch(request);
+        
+        // Cache successful responses
+        if (networkResponse.ok) {
+            const cache = await caches.open(DYNAMIC_CACHE_NAME);
+            cache.put(request, networkResponse.clone());
+        }
+        
+        return networkResponse;
+    } catch (error) {
+        console.log('Network failed for document, serving from cache:', error);
+        
+        // Try to serve from cache
+        const cachedResponse = await caches.match(request);
+        if (cachedResponse) {
+            return cachedResponse;
+        }
+        
+        // Fallback to offline page
+        return caches.match('/offline.html');
+    }
+}
+
+// Cache-first strategy for static assets
+async function handleStaticAssetRequest(request) {
+    const cachedResponse = await caches.match(request);
+    
+    if (cachedResponse) {
+        return cachedResponse;
+    }
+    
+    try {
+        const networkResponse = await fetch(request);
+        
+        if (networkResponse.ok) {
+            const cache = await caches.open(STATIC_CACHE_NAME);
+            cache.put(request, networkResponse.clone());
+        }
+        
+        return networkResponse;
+    } catch (error) {
+        console.log('Failed to fetch static asset:', error);
+        throw error;
+    }
+}
+
+// Stale-while-revalidate for external resources
+async function handleExternalRequest(request) {
+    const cachedResponse = await caches.match(request);
+    
+    // Return cached version immediately if available
+    if (cachedResponse) {
+        // Update cache in background
+        fetch(request).then(response => {
+            if (response.ok) {
+                const cache = caches.open(DYNAMIC_CACHE_NAME);
+                cache.then(c => c.put(request, response));
+            }
+        }).catch(error => {
+            console.log('Background update failed for external resource:', error);
+        });
+        
+        return cachedResponse;
+    }
+    
+    // No cache, fetch from network
+    try {
+        const networkResponse = await fetch(request);
+        
+        if (networkResponse.ok) {
+            const cache = await caches.open(DYNAMIC_CACHE_NAME);
+            cache.put(request, networkResponse.clone());
+        }
+        
+        return networkResponse;
+    } catch (error) {
+        console.log('Failed to fetch external resource:', error);
+        throw error;
+    }
+}
+
+// Network-first with cache fallback
+async function handleNetworkFirstRequest(request) {
+    try {
+        const networkResponse = await fetch(request);
+        
+        if (networkResponse.ok) {
+            const cache = await caches.open(DYNAMIC_CACHE_NAME);
+            cache.put(request, networkResponse.clone());
+        }
+        
+        return networkResponse;
+    } catch (error) {
+        console.log('Network failed, serving from cache:', error);
+        
+        const cachedResponse = await caches.match(request);
+        if (cachedResponse) {
+            return cachedResponse;
+        }
+        
+        throw error;
+    }
+}
 
 // Background sync for form submissions
 self.addEventListener('sync', function(event) {

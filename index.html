@@ -1049,5 +1049,228 @@
 
     <!-- Scripts -->
     <script src="assets/js/main.js"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        // Register Service Worker for PWA functionality
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                        
+                        // Check for updates
+                        registration.addEventListener('updatefound', function() {
+                            const newWorker = registration.installing;
+                            
+                            newWorker.addEventListener('statechange', function() {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // New version is available
+                                    if (confirm('A new version is available! Would you like to reload to get the latest features?')) {
+                                        newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch(function(err) {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+                
+                // Listen for service worker messages
+                navigator.serviceWorker.addEventListener('message', function(event) {
+                    if (event.data.type === 'CACHE_UPDATED') {
+                        console.log('Cache has been updated');
+                    }
+                });
+            });
+        }
+        
+        // PWA Install prompt
+        let deferredPrompt;
+        let installButton = null;
+        
+        window.addEventListener('beforeinstallprompt', function(e) {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            
+            // Create and show install button
+            createInstallButton();
+        });
+        
+        function createInstallButton() {
+            if (installButton) return; // Button already exists
+            
+            installButton = document.createElement('button');
+            installButton.textContent = '📱 Install App';
+            installButton.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                padding: 12px 20px;
+                border-radius: 25px;
+                font-weight: 600;
+                cursor: pointer;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                z-index: 1000;
+                transition: all 0.3s ease;
+                font-size: 14px;
+            `;
+            
+            installButton.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px)';
+                this.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)';
+            });
+            
+            installButton.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
+            });
+            
+            installButton.addEventListener('click', function() {
+                // Hide the install button
+                installButton.style.display = 'none';
+                
+                // Show the install prompt
+                deferredPrompt.prompt();
+                
+                // Wait for the user to respond to the prompt
+                deferredPrompt.userChoice.then(function(choiceResult) {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    } else {
+                        console.log('User dismissed the install prompt');
+                        // Show button again after 30 seconds if dismissed
+                        setTimeout(() => {
+                            if (installButton) {
+                                installButton.style.display = 'block';
+                            }
+                        }, 30000);
+                    }
+                    deferredPrompt = null;
+                });
+            });
+            
+            document.body.appendChild(installButton);
+            
+            // Auto-hide after 10 seconds
+            setTimeout(() => {
+                if (installButton && installButton.style.display !== 'none') {
+                    installButton.style.opacity = '0.7';
+                }
+            }, 10000);
+        }
+        
+        // Handle successful app installation
+        window.addEventListener('appinstalled', function(evt) {
+            console.log('PWA was installed successfully');
+            
+            // Remove install button if it exists
+            if (installButton) {
+                installButton.remove();
+                installButton = null;
+            }
+            
+            // Show a thank you message
+            const notification = document.createElement('div');
+            notification.textContent = '🎉 App installed successfully!';
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #4CAF50;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-weight: 600;
+                z-index: 1001;
+                animation: slideIn 0.3s ease;
+            `;
+            
+            // Add slide animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(notification);
+            
+            // Remove notification after 3 seconds
+            setTimeout(() => {
+                notification.remove();
+                style.remove();
+            }, 3000);
+        });
+        
+        // Offline form submission with background sync
+        function submitFormOffline(formData) {
+            if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+                // Store form data in IndexedDB for background sync
+                const request = indexedDB.open('TheGeeksInfoDB', 1);
+                
+                request.onupgradeneeded = function(event) {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('formSubmissions')) {
+                        db.createObjectStore('formSubmissions', { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+                
+                request.onsuccess = function(event) {
+                    const db = event.target.result;
+                    const transaction = db.transaction(['formSubmissions'], 'readwrite');
+                    const store = transaction.objectStore('formSubmissions');
+                    
+                    store.add({
+                        data: formData,
+                        timestamp: Date.now()
+                    });
+                    
+                    // Register background sync
+                    navigator.serviceWorker.ready.then(function(registration) {
+                        return registration.sync.register('contact-form-sync');
+                    });
+                    
+                    // Show offline message
+                    showOfflineMessage('Form saved! It will be submitted when you\'re back online.');
+                };
+            }
+        }
+        
+        function showOfflineMessage(message) {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #ff9800;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-weight: 600;
+                z-index: 1001;
+                max-width: 90%;
+                text-align: center;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+    </script>
 </body>
 </html>
