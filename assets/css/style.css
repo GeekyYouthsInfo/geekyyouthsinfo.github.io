@@ -1158,11 +1158,14 @@ section {
 
 .meeting-subtitle {
     font-size: 1.2rem;
-    opacity: 0.9;
+    opacity: 1;
     font-style: italic;
     max-width: 800px;
     margin: 0 auto;
     line-height: 1.6;
+    color: #ffffff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    font-weight: 500;
 }
 
 .scheduler-container {
