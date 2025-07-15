@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeCounters();
     initializeTypingEffect();
     initializeApplicationModal();
+    
+    // Initialize Meeting Scheduler
+    meetingScheduler = new MeetingScheduler();
 });
 
 // Preload critical images for better performance
@@ -548,113 +551,383 @@ function initializeApplicationModal() {
     }
 }
 
-// Utility functions
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-function throttle(func, limit) {
-    let inThrottle;
-    return function() {
-        const args = arguments;
-        const context = this;
-        if (!inThrottle) {
-            func.apply(context, args);
-            inThrottle = true;
-            setTimeout(() => inThrottle = false, limit);
+// Meeting Scheduler Class
+class MeetingScheduler {
+    constructor() {
+        this.currentDate = new Date();
+        this.selectedDate = null;
+        this.selectedTime = null;
+        this.timeFormat = 12; // 12 or 24 hour format
+        
+        // Available time slots (24-hour format)
+        this.availableSlots = [
+            '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+            '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
+        ];
+        
+        // Initialize scheduler if elements exist
+        if (this.checkElements()) {
+            this.init();
         }
-    };
-}
-
-// Performance optimization
-window.addEventListener('scroll', throttle(function() {
-    // Scroll-based animations and effects are handled here
-    updateScrollProgress();
-}, 16)); // 60 FPS
-
-function updateScrollProgress() {
-    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-    const scrolled = (winScroll / height) * 100;
+    }
     
-    // Update progress bar if it exists
-    const progressBar = document.querySelector('.scroll-progress');
-    if (progressBar) {
-        progressBar.style.width = scrolled + '%';
+    checkElements() {
+        return document.getElementById('calendarDays') && 
+               document.getElementById('currentMonth') && 
+               document.getElementById('timeSlots');
+    }
+    
+    init() {
+        this.renderCalendar();
+        this.bindEvents();
+    }
+    
+    bindEvents() {
+        // Calendar navigation
+        const prevBtn = document.getElementById('prevMonth');
+        const nextBtn = document.getElementById('nextMonth');
+        
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+                this.renderCalendar();
+                this.hideTimeSlots();
+            });
+        }
+        
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+                this.renderCalendar();
+                this.hideTimeSlots();
+            });
+        }
+        
+        // Time format toggle
+        document.querySelectorAll('.format-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.timeFormat = parseInt(e.target.dataset.format);
+                if (this.selectedDate) {
+                    this.renderTimeSlots();
+                }
+            });
+        });
+        
+        // Schedule button
+        const scheduleBtn = document.getElementById('scheduleBtn');
+        if (scheduleBtn) {
+            scheduleBtn.addEventListener('click', () => {
+                this.scheduleMeeting();
+            });
+        }
+    }
+    
+    renderCalendar() {
+        const monthNames = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        
+        // Update month header
+        const monthHeader = document.getElementById('currentMonth');
+        if (monthHeader) {
+            monthHeader.textContent = `${monthNames[this.currentDate.getMonth()]} ${this.currentDate.getFullYear()}`;
+        }
+        
+        // Generate calendar days
+        const calendarDays = document.getElementById('calendarDays');
+        if (!calendarDays) return;
+        
+        const firstDay = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), 1);
+        const lastDay = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 0);
+        const startDate = new Date(firstDay);
+        startDate.setDate(startDate.getDate() - firstDay.getDay());
+        
+        calendarDays.innerHTML = '';
+        
+        // Generate 42 days (6 weeks)
+        for (let i = 0; i < 42; i++) {
+            const date = new Date(startDate);
+            date.setDate(startDate.getDate() + i);
+            
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day';
+            dayElement.textContent = date.getDate();
+            
+            // Add classes based on date status
+            if (date.getMonth() !== this.currentDate.getMonth()) {
+                dayElement.classList.add('other-month');
+            } else if (date >= new Date().setHours(0,0,0,0) && this.isDateAvailable(date)) {
+                dayElement.classList.add('available');
+                dayElement.addEventListener('click', () => this.selectDate(date));
+            } else if (date < new Date().setHours(0,0,0,0)) {
+                dayElement.classList.add('unavailable');
+            }
+            
+            calendarDays.appendChild(dayElement);
+        }
+    }
+    
+    isDateAvailable(date) {
+        // Don't allow weekends for now
+        const day = date.getDay();
+        return day !== 0 && day !== 6; // Not Sunday or Saturday
+    }
+    
+    selectDate(date) {
+        this.selectedDate = date;
+        this.selectedTime = null; // Reset selected time
+        
+        // Update selected date in calendar
+        document.querySelectorAll('.calendar-day').forEach(day => {
+            day.classList.remove('selected');
+        });
+        event.target.classList.add('selected');
+        
+        // Show time slots
+        this.showTimeSlots();
+        
+        // Update selected date header
+        const selectedDateElement = document.getElementById('selectedDate');
+        if (selectedDateElement) {
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            selectedDateElement.textContent = `${dayNames[date.getDay()]} ${date.getDate()} ${monthNames[date.getMonth()]}`;
+        }
+        
+        this.renderTimeSlots();
+    }
+    
+    showTimeSlots() {
+        const timeSlots = document.getElementById('timeSlots');
+        if (timeSlots) {
+            timeSlots.style.display = 'block';
+        }
+    }
+    
+    hideTimeSlots() {
+        const timeSlots = document.getElementById('timeSlots');
+        if (timeSlots) {
+            timeSlots.style.display = 'none';
+        }
+        this.selectedDate = null;
+        this.selectedTime = null;
+        this.updateScheduleButton();
+    }
+    
+    renderTimeSlots() {
+        const timeGrid = document.getElementById('timeGrid');
+        if (!timeGrid) return;
+        
+        timeGrid.innerHTML = '';
+        
+        this.availableSlots.forEach(slot => {
+            const timeElement = document.createElement('div');
+            timeElement.className = 'time-slot';
+            timeElement.textContent = this.formatTime(slot);
+            
+            // Check if slot is available
+            if (this.isTimeSlotAvailable(slot)) {
+                timeElement.addEventListener('click', () => this.selectTime(slot, timeElement));
+            } else {
+                timeElement.classList.add('unavailable');
+            }
+            
+            timeGrid.appendChild(timeElement);
+        });
+    }
+    
+    isTimeSlotAvailable(time) {
+        // For demo purposes, make some random slots unavailable
+        const unavailable = ['09:30', '11:00', '14:30', '16:00'];
+        return !unavailable.includes(time);
+    }
+    
+    selectTime(time, element) {
+        this.selectedTime = time;
+        
+        // Update selected time in grid
+        document.querySelectorAll('.time-slot').forEach(slot => {
+            slot.classList.remove('selected');
+        });
+        element.classList.add('selected');
+        
+        this.updateScheduleButton();
+    }
+    
+    updateScheduleButton() {
+        const scheduleBtn = document.getElementById('scheduleBtn');
+        if (scheduleBtn) {
+            if (this.selectedDate && this.selectedTime) {
+                scheduleBtn.style.display = 'block';
+                scheduleBtn.disabled = false;
+            } else {
+                scheduleBtn.style.display = 'none';
+                scheduleBtn.disabled = true;
+            }
+        }
+    }
+    
+    formatTime(time24) {
+        if (this.timeFormat === 24) {
+            return time24;
+        }
+        
+        const [hours, minutes] = time24.split(':');
+        const hour12 = hours % 12 || 12;
+        const ampm = hours >= 12 ? 'pm' : 'am';
+        return `${hour12}:${minutes}${ampm}`;
+    }
+    
+    scheduleMeeting() {
+        if (!this.selectedDate || !this.selectedTime) {
+            this.showNotification('Please select both a date and time for your meeting.', 'error');
+            return;
+        }
+        
+        const formattedDate = this.selectedDate.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        const formattedTime = this.formatTime(this.selectedTime);
+        
+        // Create mailto link with meeting details
+        const subject = encodeURIComponent('Meeting Request - Project Discussion');
+        const body = encodeURIComponent(`Hello TheGeeksInfo Team,
+
+I would like to schedule a meeting to discuss my project.
+
+Preferred Meeting Details:
+- Date: ${formattedDate}
+- Time: ${formattedTime} (Africa/Kampala timezone)
+- Duration: 30 minutes
+- Platform: Google Meet
+
+Project Details:
+[Please describe your project and goals here]
+
+Looking forward to hearing from you!
+
+Best regards`);
+        
+        const mailtoLink = `mailto:thegeeksinformation@gmail.com?subject=${subject}&body=${body}`;
+        window.location.href = mailtoLink;
+        
+        // Show confirmation
+        this.showNotification(`Meeting request sent! We'll confirm your appointment for ${formattedDate} at ${formattedTime}.`, 'success');
+        
+        // Reset selections
+        this.resetScheduler();
+    }
+    
+    resetScheduler() {
+        this.selectedDate = null;
+        this.selectedTime = null;
+        
+        // Clear visual selections
+        document.querySelectorAll('.calendar-day').forEach(day => {
+            day.classList.remove('selected');
+        });
+        document.querySelectorAll('.time-slot').forEach(slot => {
+            slot.classList.remove('selected');
+        });
+        
+        this.hideTimeSlots();
+    }
+    
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        // Add styles if not already added
+        if (!document.getElementById('notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'notification-styles';
+            style.textContent = `
+                .notification {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: white;
+                    border-radius: 8px;
+                    padding: 16px 20px;
+                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+                    z-index: 10000;
+                    transform: translateX(400px);
+                    transition: transform 0.3s ease;
+                    max-width: 400px;
+                }
+                
+                .notification.show {
+                    transform: translateX(0);
+                }
+                
+                .notification-success {
+                    border-left: 4px solid #28a745;
+                }
+                
+                .notification-error {
+                    border-left: 4px solid #dc3545;
+                }
+                
+                .notification-info {
+                    border-left: 4px solid #17a2b8;
+                }
+                
+                .notification-content {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+                
+                .notification-content i {
+                    font-size: 1.2rem;
+                }
+                
+                .notification-success i {
+                    color: #28a745;
+                }
+                
+                .notification-error i {
+                    color: #dc3545;
+                }
+                
+                .notification-info i {
+                    color: #17a2b8;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Add to page
+        document.body.appendChild(notification);
+        
+        // Trigger animation
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 100);
+        
+        // Remove after delay
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 4000);
     }
 }
 
-// Add scroll progress bar
-document.addEventListener('DOMContentLoaded', function() {
-    const progressBar = document.createElement('div');
-    progressBar.className = 'scroll-progress';
-    progressBar.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 0%;
-        height: 3px;
-        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-        z-index: 10001;
-        transition: width 0.1s ease-out;
-    `;
-    document.body.appendChild(progressBar);
-});
-
-// Service Worker Registration (for PWA features)
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/sw.js')
-            .then(function(registration) {
-                console.log('ServiceWorker registration successful');
-            })
-            .catch(function(err) {
-                console.log('ServiceWorker registration failed');
-            });
-    });
-}
-
-// Analytics and tracking (placeholder)
-function trackEvent(eventName, eventProperties = {}) {
-    // Replace with your analytics implementation
-    console.log('Event tracked:', eventName, eventProperties);
-}
-
-// Track CTA button clicks
-document.addEventListener('DOMContentLoaded', function() {
-    const ctaButtons = document.querySelectorAll('.btn-primary, .btn-secondary, .cta-button');
-    ctaButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            trackEvent('CTA_Click', {
-                button_text: this.textContent.trim(),
-                button_location: this.closest('section')?.id || 'unknown'
-            });
-        });
-    });
-});
-
-// Error handling
-window.addEventListener('error', function(e) {
-    console.error('JavaScript error:', e.error);
-    // You can send this to your error tracking service
-});
-
-window.addEventListener('unhandledrejection', function(e) {
-    console.error('Unhandled promise rejection:', e.reason);
-    // You can send this to your error tracking service
-});
-
-// Export functions for external use
-window.TheGeeksInfo = {
-    showNotification,
-    trackEvent,
-    animateCounter
-};
+// Initialize Meeting Scheduler
+let meetingScheduler;
